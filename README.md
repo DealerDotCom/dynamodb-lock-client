@@ -25,7 +25,12 @@ within a customizable leaseDuration that you set.
 To use the Amazon DynamoDB Lock Client, declare a dependency on the latest version of
 this artifact in Maven in your pom.xml.
 ```xml
-<dependency>
+<dependency> <!-- Java 7 -->
+    <groupId>com.dealer.amazonaws</groupId>
+    <artifactId>dynamodb-lock-client-java7</artifactId>
+    <version>1.0.0</version>
+</dependency>
+<dependency> <!-- Java 8 -->
     <groupId>com.amazonaws</groupId>
     <artifactId>dynamodb-lock-client</artifactId>
     <version>1.0.0</version>
