@@ -29,13 +29,12 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+
+import com.amazonaws.services.dynamodbv2.model.*;
+import com.google.common.base.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import javax.swing.text.html.Option;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -48,16 +47,6 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.metrics.RequestMetricCollector;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.internal.InternalUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.LockNotGrantedException;
-import com.amazonaws.services.dynamodbv2.model.LockTableDoesNotExistException;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
-import com.amazonaws.services.dynamodbv2.model.TableDescription;
-import com.amazonaws.services.dynamodbv2.model.TableStatus;
 
 /**
  * Unit tests for AmazonDynamoDBLockClient.
@@ -78,16 +67,38 @@ public class AmazonDynamoDBLockClientTest {
     public void releaseLock_whenRemoveKillSessionMonitorJoinInterrupted_swallowsInterruptedException()
         throws InterruptedException {
         setOwnerNameToUuid();
-        Thread thread = spy(new Thread(() -> System.out.println("Running spied thread"), "my-spy-thread"));
+        Thread thread = spy(new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                System.out.println("Running spied thread");
+            }
+        }, "my-spy-thread"));
         doThrow(new InterruptedException()).when(thread).join();
         //need this otherwise the background thread will start the thread in this frame
         AmazonDynamoDBLockClient lockClient = spy(
-            new AmazonDynamoDBLockClient(getLockClientBuilder(threadName -> (runnable -> thread))
-                    .build()));
-        when(dynamodb.getItem(any())).thenReturn(new GetItemResult());
+            new AmazonDynamoDBLockClient(getLockClientBuilder(new NamedThreadCreator() {
+                @Override
+                public ThreadFactory createThreadWithName(final String name) {
+                    return new ThreadFactory() {
+                        @Override
+                        public Thread newThread(final Runnable runnable) {
+                            return new Thread(runnable, name);
+                        }
+                    };
+                }
+            }).build()));
+
+        Runnable echo = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("monitored");
+            }
+        };
+
+        when(dynamodb.getItem(any(GetItemRequest.class))).thenReturn(new GetItemResult());
         LockItem lockItem = lockClient.acquireLock(AcquireLockOptions.builder(PARTITION_KEY)
-                .withSessionMonitor(3001,
-                    Optional.of(() -> System.out.println("monitored")))
+                .withSessionMonitor(3001, Optional.of(echo))
                 .withTimeUnit(TimeUnit.MILLISECONDS)
                 .build());
         lockClient.releaseLock(lockItem);
@@ -143,8 +154,8 @@ public class AmazonDynamoDBLockClientTest {
     public void acquireLock_whenLockAlreadyExists_throwLockNotGrantedException() throws InterruptedException {
         setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
-        when(dynamodb.getItem(any())).thenReturn(new GetItemResult());
-        when(dynamodb.putItem(any())).thenThrow(new ConditionalCheckFailedException("item existed"));
+        when(dynamodb.getItem(any(GetItemRequest.class))).thenReturn(new GetItemResult());
+        when(dynamodb.putItem(any(PutItemRequest.class))).thenThrow(new ConditionalCheckFailedException("item existed"));
         client.acquireLock(AcquireLockOptions.builder("asdf").build());
     }
 
@@ -164,7 +175,7 @@ public class AmazonDynamoDBLockClientTest {
         throws InterruptedException {
         UUID uuid = setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
-        when(dynamodb.getItem(any()))
+        when(dynamodb.getItem(any(GetItemRequest.class)))
             .thenReturn(new GetItemResult().withItem(InternalUtils.toAttributeValues(new Item()
                 .withString("customer", "customer1")
                 .withString("ownerName", "foobar")
@@ -190,9 +201,9 @@ public class AmazonDynamoDBLockClientTest {
     public void sendHeartbeat_whenDeleteDataTrueAndDataNotNull_throwsIllegalArgumentException() {
         UUID uuid = setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
-        LockItem item = new LockItem(client, "a", Optional.empty(), Optional.of(ByteBuffer.wrap("data".getBytes())),
+        LockItem item = new LockItem(client, "a", Optional.fromNullable((String) null), Optional.of(ByteBuffer.wrap("data".getBytes())),
             false, uuid.toString(), 1L, 2L, "rvn", false,
-            Optional.empty(), null);
+            Optional.fromNullable((SessionMonitor) null), null);
         client.sendHeartbeat(SendHeartbeatOptions.builder(item).withDeleteData(true).withData(ByteBuffer.wrap("data".getBytes())).build());
     }
 
@@ -201,9 +212,9 @@ public class AmazonDynamoDBLockClientTest {
         UUID uuid = setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
         long lastUpdatedTimeInMilliseconds = 2l;
-        LockItem item = new LockItem(client, "a", Optional.empty(), Optional.of(ByteBuffer.wrap("data".getBytes())),
+        LockItem item = new LockItem(client, "a", Optional.fromNullable((String) null), Optional.of(ByteBuffer.wrap("data".getBytes())),
             false, uuid.toString(), 1L, lastUpdatedTimeInMilliseconds,
-            "rvn", false, Optional.empty(), null);
+            "rvn", false, Optional.fromNullable((SessionMonitor) null), null);
         client.sendHeartbeat(SendHeartbeatOptions.builder(item).withDeleteData(null).withData(ByteBuffer.wrap("data".getBytes())).build());
     }
 
@@ -212,9 +223,9 @@ public class AmazonDynamoDBLockClientTest {
         setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
         long lastUpdatedTimeInMilliseconds = Long.MAX_VALUE;
-        LockItem item = new LockItem(client, "a", Optional.empty(), Optional.of(ByteBuffer.wrap("data".getBytes())),
+        LockItem item = new LockItem(client, "a", Optional.fromNullable((String) null), Optional.of(ByteBuffer.wrap("data".getBytes())),
             false, "different owner", 1L, lastUpdatedTimeInMilliseconds,
-            "rvn", false, Optional.empty(), null);
+            "rvn", false, Optional.fromNullable((SessionMonitor) null), null);
         client.sendHeartbeat(SendHeartbeatOptions.builder(item).withDeleteData(null).withData(ByteBuffer.wrap("data".getBytes())).build());
     }
 
@@ -223,9 +234,9 @@ public class AmazonDynamoDBLockClientTest {
         UUID uuid = setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
         long lastUpdatedTimeInMilliseconds = Long.MAX_VALUE;
-        LockItem item = new LockItem(client, "a", Optional.empty(), Optional.of(ByteBuffer.wrap("data".getBytes())),
+        LockItem item = new LockItem(client, "a", Optional.fromNullable((String) null), Optional.of(ByteBuffer.wrap("data".getBytes())),
             false, uuid.toString(), 1L, lastUpdatedTimeInMilliseconds,
-            "rvn", true, Optional.empty(), null);
+            "rvn", true, Optional.fromNullable((SessionMonitor) null), null);
         client.sendHeartbeat(SendHeartbeatOptions.builder(item).withDeleteData(null).withData(ByteBuffer.wrap("data".getBytes())).build());
     }
 
@@ -234,9 +245,9 @@ public class AmazonDynamoDBLockClientTest {
         UUID uuid = setOwnerNameToUuid();
         AmazonDynamoDBLockClient client = getLockClient();
         long lastUpdatedTimeInMilliseconds = Long.MAX_VALUE;
-        LockItem item = new LockItem(client, "a", Optional.empty(), Optional.of(ByteBuffer.wrap("data".getBytes())),
+        LockItem item = new LockItem(client, "a", Optional.fromNullable((String) null), Optional.of(ByteBuffer.wrap("data".getBytes())),
             false, uuid.toString(), 1L, lastUpdatedTimeInMilliseconds,
-            "rvn", false, Optional.empty(), null);
+            "rvn", false, Optional.fromNullable((SessionMonitor) null), null);
         client.sendHeartbeat(SendHeartbeatOptions.builder(item)
             .withDeleteData(null)
             .withData(ByteBuffer.wrap("data".getBytes()))
@@ -257,7 +268,7 @@ public class AmazonDynamoDBLockClientTest {
                 .build()));
     }
 
-    private AmazonDynamoDBLockClientOptions.AmazonDynamoDBLockClientOptionsBuilder getLockClientBuilder(Function<String, ThreadFactory> threadFactoryFunction) {
+    private AmazonDynamoDBLockClientOptions.AmazonDynamoDBLockClientOptionsBuilder getLockClientBuilder(NamedThreadCreator threadFactoryFunction) {
         return new AmazonDynamoDBLockClientOptions.AmazonDynamoDBLockClientOptionsBuilder(
             dynamodb, "locks", null, threadFactoryFunction)
             .withHeartbeatPeriod(3000L)

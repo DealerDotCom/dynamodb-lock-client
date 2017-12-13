@@ -14,7 +14,7 @@
  */
 package com.amazonaws.services.dynamodbv2;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 import com.amazonaws.metrics.RequestMetricCollector;
 
@@ -35,14 +35,14 @@ public class GetLockOptions {
         private Optional<RequestMetricCollector> requestMetricCollector;
 
         GetLockOptionsBuilder(final String partitionKey) {
-            this.sortKey = Optional.empty();
+            this.sortKey = Optional.absent();
             this.deleteLockOnRelease = false;
-            this.requestMetricCollector = Optional.empty();
+            this.requestMetricCollector = Optional.absent();
             this.partitionKey = partitionKey;
         }
 
         public GetLockOptionsBuilder withSortKey(final String sortKey) {
-            this.sortKey = Optional.ofNullable(sortKey);
+            this.sortKey = Optional.fromNullable(sortKey);
             return this;
         }
 
@@ -52,7 +52,7 @@ public class GetLockOptions {
         }
 
         public GetLockOptionsBuilder withRequestMetricCollector(final RequestMetricCollector requestMetricCollector) {
-            this.requestMetricCollector = Optional.ofNullable(requestMetricCollector);
+            this.requestMetricCollector = Optional.fromNullable(requestMetricCollector);
             return this;
         }
 

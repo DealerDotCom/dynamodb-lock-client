@@ -15,7 +15,7 @@
 package com.amazonaws.services.dynamodbv2;
 
 import java.nio.ByteBuffer;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.metrics.RequestMetricCollector;
@@ -55,8 +55,8 @@ public class SendHeartbeatOptions {
 
         SendHeartbeatOptionsBuilder(final LockItem lockItem) {
             this.lockItem = lockItem;
-            this.requestMetricCollector = Optional.empty();
-            this.data = Optional.empty();
+            this.requestMetricCollector = Optional.absent();
+            this.data = Optional.absent();
         }
 
         /**
@@ -64,7 +64,7 @@ public class SendHeartbeatOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public SendHeartbeatOptionsBuilder withData(final ByteBuffer data) {
-            this.data = Optional.ofNullable(data);
+            this.data = Optional.fromNullable(data);
             return this;
         }
 
@@ -102,7 +102,7 @@ public class SendHeartbeatOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public SendHeartbeatOptionsBuilder withRequestMetricCollector(final RequestMetricCollector requestMetricCollector) {
-            this.requestMetricCollector = Optional.ofNullable(requestMetricCollector);
+            this.requestMetricCollector = Optional.fromNullable(requestMetricCollector);
             return this;
         }
 

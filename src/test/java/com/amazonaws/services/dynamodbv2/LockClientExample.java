@@ -22,7 +22,7 @@ package com.amazonaws.services.dynamodbv2;
  * @author <a href="mailto:amcp@amazon.co.jp">Alexander Patrikalakis</a> 2017-05-05
  */
 import java.io.IOException;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;

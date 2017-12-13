@@ -15,7 +15,7 @@
 package com.amazonaws.services.dynamodbv2;
 
 import java.nio.ByteBuffer;
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 import com.amazonaws.metrics.RequestMetricCollector;
 
@@ -52,8 +52,8 @@ public class ReleaseLockOptions {
             this.lockItem = lockItem;
             this.deleteLock = true;
             this.bestEffort = false;
-            this.data = Optional.empty();
-            this.requestMetricCollector = Optional.empty();
+            this.data = Optional.absent();
+            this.requestMetricCollector = Optional.absent();
         }
 
         /**
@@ -93,7 +93,7 @@ public class ReleaseLockOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public ReleaseLockOptionsBuilder withData(final ByteBuffer data) {
-            this.data = Optional.ofNullable(data);
+            this.data = Optional.fromNullable(data);
             return this;
         }
 
@@ -103,7 +103,7 @@ public class ReleaseLockOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public ReleaseLockOptionsBuilder withRequestMetricCollector(final RequestMetricCollector requestMetricCollector) {
-            this.requestMetricCollector = Optional.ofNullable(requestMetricCollector);
+            this.requestMetricCollector = Optional.fromNullable(requestMetricCollector);
             return this;
         }
 

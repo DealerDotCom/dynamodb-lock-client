@@ -20,7 +20,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Optional;
+
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -77,8 +79,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -94,8 +96,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -111,8 +113,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -129,8 +131,8 @@ public class AcquireLockOptionsTest {
                 .withRefreshPeriod(1l)
                 .withAdditionalTimeToWaitForLock(1l)
                 .withTimeUnit(TimeUnit.MILLISECONDS)
-                .withAdditionalAttributes(new HashMap<>())
-                //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+                .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+                //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
                 .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -146,8 +148,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -163,8 +165,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(2l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -180,8 +182,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(2l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -197,8 +199,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.SECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -215,7 +217,7 @@ public class AcquireLockOptionsTest {
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
             .withAdditionalAttributes(InternalUtils.toAttributeValues(new Item().withNull("asdf")))
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -231,8 +233,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            .withSessionMonitor(1L, Optional.empty()) //never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            .withSessionMonitor(1L, Optional.fromNullable((Runnable) null)) //never equal if session monitor is set
             .withRequestMetricCollector(metricCollector).build();
         assertFalse(left.equals(right));
     }
@@ -248,8 +250,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) //never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) //never equal if session monitor is set
             .withRequestMetricCollector(null).build();
         assertFalse(left.equals(right));
     }
@@ -279,8 +281,8 @@ public class AcquireLockOptionsTest {
             .withRefreshPeriod(1l)
             .withAdditionalTimeToWaitForLock(1l)
             .withTimeUnit(TimeUnit.MILLISECONDS)
-            .withAdditionalAttributes(new HashMap<>())
-            //.withSessionMonitor(1L, Optional.empty()) never equal if session monitor is set
+            .withAdditionalAttributes(new HashMap<String, AttributeValue>())
+            //.withSessionMonitor(1L, Optional.absent()) never equal if session monitor is set
             .withRequestMetricCollector(metricCollector);
     }
 }

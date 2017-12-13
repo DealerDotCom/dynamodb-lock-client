@@ -14,14 +14,9 @@
  */
 package com.amazonaws.services.dynamodbv2;
 
-import static java.util.stream.Collectors.toList;
+import java.util.*;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 
@@ -91,7 +86,15 @@ final class LockItemPaginatedScanIterator implements Iterator<LockItem> {
     private void loadNextPageIntoResults() {
         this.scanResult = this.dynamoDB.scan(this.scanRequest);
 
-        this.currentPageResults = this.scanResult.getItems().stream().map(this.lockItemFactory::create).collect(toList());
+        List<LockItem> temp = new ArrayList<>();
+        for ( Map<String, AttributeValue> item : this.scanResult.getItems() ) {
+            if ( item != null && !item.isEmpty() ) {
+                temp.add(this.lockItemFactory.create(item));
+            }
+        }
+
+        this.currentPageResults = temp;
+
         this.currentPageResultsIndex = 0;
 
         this.scanRequest.withExclusiveStartKey(this.scanResult.getLastEvaluatedKey());

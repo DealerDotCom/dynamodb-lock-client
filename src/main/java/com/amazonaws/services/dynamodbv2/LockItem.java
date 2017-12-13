@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -80,8 +80,8 @@ public class LockItem implements Closeable {
         final Optional<SessionMonitor> sessionMonitor, final Map<String, AttributeValue> additionalAttributes) {
         Objects.requireNonNull(partitionKey, "Cannot create a lock with a null key");
         Objects.requireNonNull(ownerName, "Cannot create a lock with a null owner");
-        Objects.requireNonNull(sortKey, "Cannot create a lock with a null sortKey (use Optional.empty())");
-        Objects.requireNonNull(data, "Cannot create a lock with a null data (use Optional.empty())");
+        Objects.requireNonNull(sortKey, "Cannot create a lock with a null sortKey (use Optional.absent())");
+        Objects.requireNonNull(data, "Cannot create a lock with a null data (use Optional.absent())");
         this.client = client;
         this.partitionKey = partitionKey;
         this.sortKey = sortKey;
@@ -300,7 +300,7 @@ public class LockItem implements Closeable {
      * Returns the unique identifier for the lock so it can be stored in a HashMap under that key
      */
     String getUniqueIdentifier() {
-        return this.partitionKey + this.sortKey.orElse("");
+        return this.partitionKey + this.sortKey.or("");
     }
 
     /**

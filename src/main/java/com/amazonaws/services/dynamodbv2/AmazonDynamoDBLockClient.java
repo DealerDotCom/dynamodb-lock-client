@@ -25,15 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,7 +37,6 @@ import org.apache.http.annotation.ThreadSafe;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.metrics.RequestMetricCollector;
-import com.amazonaws.services.dynamodbv2.GetLockOptions.GetLockOptionsBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
@@ -58,7 +53,6 @@ import com.amazonaws.services.dynamodbv2.model.LockTableDoesNotExistException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.util.LockClientUtils;
@@ -188,7 +182,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
     private final ConcurrentHashMap<String, LockItem> locks;
     private final ConcurrentHashMap<String, Thread> sessionMonitors;
     private final Optional<Thread> backgroundThread;
-    private final Function<String, ThreadFactory> namedThreadCreator;
+    private final NamedThreadCreator namedThreadCreator;
     private volatile boolean shuttingDown = false;
 
     /* These are the keys that are stored in the DynamoDB table to keep track of the locks */
@@ -241,7 +235,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
             }
             this.backgroundThread = Optional.of(this.startBackgroundThread());
         } else {
-            this.backgroundThread = Optional.empty();
+            this.backgroundThread = Optional.absent();
         }
     }
 
@@ -392,8 +386,8 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
         LockItem lockTryingToBeAcquired = null;
         boolean alreadySleptOnceForOneLeasePeriod = false;
 
-        final GetLockOptions getLockOptions = new GetLockOptions.GetLockOptionsBuilder(key).withSortKey(sortKey.orElse(null)).withDeleteLockOnRelease(deleteLockOnRelease)
-            .withRequestMetricCollector(options.getRequestMetricCollector().orElse(null)).build();
+        final GetLockOptions getLockOptions = new GetLockOptions.GetLockOptionsBuilder(key).withSortKey(sortKey.orNull()).withDeleteLockOnRelease(deleteLockOnRelease)
+            .withRequestMetricCollector(options.getRequestMetricCollector().orNull()).build();
 
         while (true) {
             try {
@@ -401,7 +395,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
                     logger.trace("Call GetItem to see if the lock for " + partitionKeyName + " =" + key + ", " + this.sortKeyName + "=" + sortKey + " exists in the table");
                     final Optional<LockItem> existingLock = this.getLockFromDynamoDB(getLockOptions);
 
-                    Optional<ByteBuffer> newLockData = Optional.empty();
+                    Optional<ByteBuffer> newLockData = Optional.absent();
                     if (replaceData) {
                         newLockData = options.getData();
                     } else if (existingLock.isPresent()) {
@@ -419,8 +413,14 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
                     item.put(LEASE_DURATION, new AttributeValue().withS(String.valueOf(this.leaseDurationInMilliseconds)));
                     final String recordVersionNumber = this.generateRecordVersionNumber();
                     item.put(RECORD_VERSION_NUMBER, new AttributeValue().withS(String.valueOf(recordVersionNumber)));
-                    sortKeyName.ifPresent(sortKeyName -> item.put(sortKeyName, new AttributeValue().withS(sortKey.get())));
-                    newLockData.ifPresent(byteBuffer -> item.put(DATA, new AttributeValue().withB(byteBuffer)));
+
+                    if ( sortKeyName.isPresent() ) {
+                        item.put(sortKeyName.get(), new AttributeValue().withS(sortKey.get()));
+                    }
+
+                    if ( newLockData.isPresent() ) {
+                        item.put(DATA, new AttributeValue().withB(newLockData.get()));
+                    }
 
                     //if the existing lock does not exist or exists and is released
                     if (!existingLock.isPresent() || existingLock.get().isReleased()) {
@@ -555,7 +555,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
 
     /**
      * Attempts to acquire lock. If successful, returns the lock. Otherwise,
-     * returns Optional.empty(). For more details on behavior, please see
+     * returns Optional.absent(). For more details on behavior, please see
      * {@code acquireLock}.
      *
      * @param options The options to use when acquiring the lock.
@@ -566,7 +566,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
         try {
             return Optional.of(this.acquireLock(options));
         } catch (final LockNotGrantedException x) {
-            return Optional.empty();
+            return Optional.absent();
         }
     }
 
@@ -704,17 +704,17 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
      * @return A LockItem that represents the lock, if the lock exists.
      */
     public Optional<LockItem> getLock(final String key, final Optional<String> sortKey) {
-        Objects.requireNonNull(sortKey, "Sort Key must not be null (can be Optional.empty())");
-        if (this.locks.containsKey(key + sortKey.orElse(""))) {
-            return Optional.of(this.locks.get(key + sortKey.orElse("")));
+        Objects.requireNonNull(sortKey, "Sort Key must not be null (can be Optional.absent())");
+        if (this.locks.containsKey(key + sortKey.or(""))) {
+            return Optional.of(this.locks.get(key + sortKey.or("")));
         }
         final Optional<LockItem> lockItem =
-            this.getLockFromDynamoDB(new GetLockOptions.GetLockOptionsBuilder(key).withSortKey(sortKey.orElse(null)).withDeleteLockOnRelease(false).build());
+            this.getLockFromDynamoDB(new GetLockOptions.GetLockOptionsBuilder(key).withSortKey(sortKey.orNull()).withDeleteLockOnRelease(false).build());
 
         if (lockItem.isPresent()) {
             if (lockItem.get().isReleased()) {
-                // Return empty if a lock was released but still left in the table
-                return Optional.empty();
+                // Return absent if a lock was released but still left in the table
+                return Optional.absent();
             } else {
                 /*
                  * Clear out the record version number so that the caller cannot accidentally perform updates on this lock (since
@@ -744,17 +744,17 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
         final Map<String, AttributeValue> item = result.getItem();
 
         if (item == null) {
-            return Optional.empty();
+            return Optional.absent();
         }
 
         return Optional.of(this.createLockItem(options, item));
     }
 
     private LockItem createLockItem(final GetLockOptions options, final Map<String, AttributeValue> item) {
-        final Optional<ByteBuffer> data = Optional.ofNullable(item.get(DATA)).map(dataAttributionValue -> {
-            item.remove(DATA);
-            return dataAttributionValue.getB();
-        });
+        final AttributeValue temp = item.get(DATA);
+        item.remove(DATA);
+
+        final Optional<ByteBuffer> data = temp == null ? Optional.<ByteBuffer>absent() : Optional.fromNullable(temp.getB());
 
         final AttributeValue ownerName = item.remove(OWNER_NAME);
         final AttributeValue leaseDuration = item.remove(LEASE_DURATION);
@@ -777,38 +777,8 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
                 options.isDeleteLockOnRelease(),
                 ownerName.getS(),
                 Long.parseLong(leaseDuration.getS()), lookupTime,
-                recordVersionNumber.getS(), isReleased, Optional.empty(), item);
+                recordVersionNumber.getS(), isReleased, Optional.fromNullable((SessionMonitor) null), item);
         return lockItem;
-    }
-
-    /**
-     * <p>
-     * Retrieves all the lock items from DynamoDB.
-     * </p>
-     * <p>
-     * Not that this will may return a lock item even if it was released.
-     * </p>
-     *
-     * @param deleteOnRelease Whether or not the {@link LockItem} should delete the item
-     *                        when {@link LockItem#close()} is called on it.
-     * @return A non parallel {@link Stream} of all the {@link LockItem}s in
-     * DynamoDB. Note that the item can exist in the table even if it is
-     * released, as noted by @{link LockItem#isReleased()}.
-     */
-    public Stream<LockItem> getAllLocksFromDynamoDB(final boolean deleteOnRelease) {
-        final ScanRequest scanRequest = new ScanRequest().withTableName(this.tableName);
-        final LockItemPaginatedScanIterator iterator = new LockItemPaginatedScanIterator(this.dynamoDB, scanRequest, item -> {
-            final String key = item.get(this.partitionKeyName).getS();
-            GetLockOptionsBuilder options = GetLockOptions.builder(key).withDeleteLockOnRelease(deleteOnRelease);
-
-            options = this.sortKeyName.map(item::get).map(AttributeValue::getS).map(options::withSortKey).orElse(options);
-
-            final LockItem lockItem = this.createLockItem(options.build(), item);
-            return lockItem;
-        });
-
-        final Iterable<LockItem> iterable = () -> iterator;
-        return StreamSupport.stream(iterable.spliterator(), false /*isParallelStream*/);
     }
 
     /**
@@ -1000,7 +970,7 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
     /* Helper method that starts a background heartbeating thread */
     private Thread startBackgroundThread() {
         final Thread t = namedThreadCreator
-            .apply("dynamodb-lock-client-" + lockClientId.addAndGet(1))
+            .createThreadWithName("dynamodb-lock-client-" + lockClientId.addAndGet(1))
             .newThread(this);
         t.setDaemon(true);
         t.start();
@@ -1061,19 +1031,22 @@ public class AmazonDynamoDBLockClient implements Runnable, Closeable {
     }
 
     private Thread lockSessionMonitorChecker(final String monitorName, final LockItem lock) {
-        return namedThreadCreator.apply(monitorName + "-sessionMonitor").newThread(() -> {
-            while (true) {
-                try {
-                    final long millisUntilDangerZone = lock.millisecondsUntilDangerZoneEntered();
-                    if (millisUntilDangerZone > 0) {
-                        Thread.sleep(millisUntilDangerZone);
-                    } else {
-                        lock.runSessionMonitor();
-                        sessionMonitors.remove(monitorName);
+        return namedThreadCreator.createThreadWithName(monitorName + "-sessionMonitor").newThread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        final long millisUntilDangerZone = lock.millisecondsUntilDangerZoneEntered();
+                        if (millisUntilDangerZone > 0) {
+                            Thread.sleep(millisUntilDangerZone);
+                        } else {
+                            lock.runSessionMonitor();
+                            sessionMonitors.remove(monitorName);
+                            return;
+                        }
+                    } catch (final InterruptedException e) {
                         return;
                     }
-                } catch (final InterruptedException e) {
-                    return;
                 }
             }
         });

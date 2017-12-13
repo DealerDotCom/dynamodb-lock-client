@@ -20,7 +20,9 @@ import static org.mockito.Mockito.when;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Optional;
+
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -68,8 +70,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             false, //released
-            Optional.of(new SessionMonitor(1000, Optional.empty())), //session monitor
-            new HashMap<>())));
+            Optional.of(new SessionMonitor(1000, Optional.fromNullable((Runnable) null))), //session monitor
+            new HashMap<String, AttributeValue>())));
     }
 
     @Test
@@ -83,8 +85,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             false, //released
-            Optional.of(new SessionMonitor(1000, Optional.empty())), //session monitor
-            new HashMap<>())));
+            Optional.of(new SessionMonitor(1000, Optional.fromNullable((Runnable) null))), //session monitor
+            new HashMap<String, AttributeValue>())));
     }
 
     @Test
@@ -103,8 +105,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             true, //released
-            Optional.of(new SessionMonitor(1000, Optional.empty())), //session monitor
-            new HashMap<>()).isExpired());
+            Optional.of(new SessionMonitor(1000, Optional.fromNullable((Runnable) null))), //session monitor
+            new HashMap<String, AttributeValue>()).isExpired());
     }
 
     @Test
@@ -123,8 +125,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             true, //released
-            Optional.empty(), //session monitor
-            new HashMap<>()).ensure(2L, TimeUnit.MILLISECONDS);
+            Optional.fromNullable((SessionMonitor) null), //session monitor
+            new HashMap<String, AttributeValue>()).ensure(2L, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -138,8 +140,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             true, //released
-            Optional.of(new SessionMonitor(1000, Optional.empty())), //session monitor
-            new HashMap<>()).millisecondsUntilDangerZoneEntered();
+            Optional.of(new SessionMonitor(1000, Optional.fromNullable((Runnable) null))), //session monitor
+            new HashMap<String, AttributeValue>()).millisecondsUntilDangerZoneEntered();
     }
 
     @Test
@@ -165,8 +167,8 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             false, //released
-            Optional.empty(), //session monitor
-            new HashMap<>()).hasCallback();
+            Optional.fromNullable((SessionMonitor) null), //session monitor
+            new HashMap<String, AttributeValue>()).hasCallback();
     }
 
     static LockItem createLockItem(AmazonDynamoDBLockClient lockClient) {
@@ -179,7 +181,7 @@ public class LockItemTest {
             1000, //last updated time in milliseconds
             "recordVersionNumber",
             false, //released
-            Optional.of(new SessionMonitor(1000, Optional.empty())), //session monitor
-            new HashMap<>()); //additional attributes
+            Optional.of(new SessionMonitor(1000, Optional.fromNullable((Runnable) null))), //session monitor
+            new HashMap<String, AttributeValue>()); //additional attributes
     }
 }
