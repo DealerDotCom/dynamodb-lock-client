@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.amazonaws</groupId>
     <artifactId>dynamodb-lock-client</artifactId>
-    <version>1.0.0-java-7</version>
+    <version>1.0.0-java-7-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Amazon DynamoDB Lock Client</name>
     <url>https://github.com/awslabs/dynamodb-lock-client</url>
