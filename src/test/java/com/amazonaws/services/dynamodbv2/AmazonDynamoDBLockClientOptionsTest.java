@@ -28,6 +28,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 
 /**
@@ -53,7 +54,7 @@ public class AmazonDynamoDBLockClientOptionsTest {
 
         AmazonDynamoDBLockClientOptions options = builder.build();
         AmazonDynamoDBLockClient client = new AmazonDynamoDBLockClient(options);
-        when(dynamodb.getItem(any())).thenReturn(new GetItemResult());
+        when(dynamodb.getItem(any(GetItemRequest.class))).thenReturn(new GetItemResult());
         LockItem lock = client.acquireLock(AcquireLockOptions.builder("asdf").build());
         assertEquals(uuid.toString(), lock.getOwnerName());
     }

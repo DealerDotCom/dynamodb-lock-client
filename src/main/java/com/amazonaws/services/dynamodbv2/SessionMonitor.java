@@ -14,7 +14,7 @@
  */
 package com.amazonaws.services.dynamodbv2;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 import com.amazonaws.services.dynamodbv2.util.LockClientUtils;
 

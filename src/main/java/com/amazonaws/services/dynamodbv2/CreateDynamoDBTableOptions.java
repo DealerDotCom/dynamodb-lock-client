@@ -14,7 +14,7 @@
  */
 package com.amazonaws.services.dynamodbv2;
 
-import java.util.Optional;
+import com.google.common.base.Optional;
 
 import com.amazonaws.metrics.RequestMetricCollector;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
@@ -58,8 +58,8 @@ public class CreateDynamoDBTableOptions {
             this.provisionedThroughput = provisionedThroughput;
             this.tableName = tableName;
             this.partitionKeyName = AmazonDynamoDBLockClientOptions.DEFAULT_PARTITION_KEY_NAME;
-            this.sortKeyName = Optional.empty();
-            this.requestMetricCollector = Optional.empty();
+            this.sortKeyName = Optional.absent();
+            this.requestMetricCollector = Optional.absent();
         }
 
         /**
@@ -76,7 +76,7 @@ public class CreateDynamoDBTableOptions {
          * @return this
          */
         public CreateDynamoDBTableOptionsBuilder withSortKeyName(final String sortKeyName) {
-            this.sortKeyName = Optional.ofNullable(sortKeyName);
+            this.sortKeyName = Optional.fromNullable(sortKeyName);
             return this;
         }
 
@@ -85,7 +85,7 @@ public class CreateDynamoDBTableOptions {
          * @return this
          */
         public CreateDynamoDBTableOptionsBuilder withRequestMetricCollector(final RequestMetricCollector requestMetricCollector) {
-            this.requestMetricCollector = Optional.ofNullable(requestMetricCollector);
+            this.requestMetricCollector = Optional.fromNullable(requestMetricCollector);
             return this;
         }
 

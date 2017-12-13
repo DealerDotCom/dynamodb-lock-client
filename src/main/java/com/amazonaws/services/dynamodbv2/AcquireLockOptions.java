@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.metrics.RequestMetricCollector;
@@ -67,9 +67,9 @@ public class AcquireLockOptions {
         AcquireLockOptionsBuilder(final String partitionKey) {
             this.partitionKey = partitionKey;
             this.additionalAttributes = new HashMap<>();
-            this.sortKey = Optional.empty();
-            this.requestMetricCollector = Optional.empty();
-            this.data = Optional.empty();
+            this.sortKey = Optional.absent();
+            this.requestMetricCollector = Optional.absent();
+            this.data = Optional.absent();
             this.replaceData = true;
             this.deleteLockOnRelease = true;
         }
@@ -93,7 +93,7 @@ public class AcquireLockOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public AcquireLockOptionsBuilder withData(final ByteBuffer data) {
-            this.data = Optional.ofNullable(data);
+            this.data = Optional.fromNullable(data);
             return this;
         }
 
@@ -237,7 +237,7 @@ public class AcquireLockOptions {
          * @return a reference to this builder for fluent method chaining
          */
         public AcquireLockOptionsBuilder withRequestMetricCollector(final RequestMetricCollector requestMetricCollector) {
-            this.requestMetricCollector = Optional.ofNullable(requestMetricCollector);
+            this.requestMetricCollector = Optional.fromNullable(requestMetricCollector);
             return this;
         }
 
@@ -247,7 +247,7 @@ public class AcquireLockOptions {
                 Objects.requireNonNull(this.timeUnit, "timeUnit must not be null if sessionMonitor is non-null");
                 sessionMonitor = Optional.of(new SessionMonitor(this.timeUnit.toMillis(this.safeTimeWithoutHeartbeat), this.sessionMonitorCallback));
             } else {
-                sessionMonitor = Optional.empty();
+                sessionMonitor = Optional.absent();
             }
             return new AcquireLockOptions(this.partitionKey, this.sortKey, this.data, this.replaceData, this.deleteLockOnRelease, this.refreshPeriod,
                 this.additionalTimeToWaitForLock, this.timeUnit, this.additionalAttributes, sessionMonitor, this.requestMetricCollector);

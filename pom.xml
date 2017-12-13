@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.amazonaws</groupId>
     <artifactId>dynamodb-lock-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-java-7</version>
     <packaging>jar</packaging>
     <name>Amazon DynamoDB Lock Client</name>
     <url>https://github.com/awslabs/dynamodb-lock-client</url>
@@ -16,7 +16,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dynamodb-local.port>4567</dynamodb-local.port>
         <dynamodb-local.endpoint>http://localhost:${dynamodb-local.port}</dynamodb-local.endpoint>
-        <jdk.version>1.8</jdk.version>
+        <jdk.version>1.7</jdk.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <aws.java.sdk.version>1.11.160</aws.java.sdk.version>
         <dependency.plugin.version>3.0.0</dependency.plugin.version>
@@ -68,6 +68,11 @@
         </license>
     </licenses>
     <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>23.5-android</version>
+        </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-dynamodb</artifactId>

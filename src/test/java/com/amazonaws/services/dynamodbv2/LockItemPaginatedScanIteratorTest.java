@@ -45,10 +45,11 @@ public class LockItemPaginatedScanIteratorTest {
         LockItemPaginatedScanIterator sut = new LockItemPaginatedScanIterator(dynamodb, request, factory);
         List<Map<String, AttributeValue>> list1 = new ArrayList<>();
         list1.add(InternalUtils.toAttributeValues(new Item()));
-        when(dynamodb.scan(any()))
-            .thenReturn(new ScanResult().withItems(list1).withCount(1).withLastEvaluatedKey(new HashMap<>()))
-            .thenReturn(new ScanResult().withItems(Collections.emptyList()).withCount(0));
+        when(dynamodb.scan(any(ScanRequest.class)))
+            .thenReturn(new ScanResult().withItems(list1).withCount(1).withLastEvaluatedKey(new HashMap<String, AttributeValue>()))
+            .thenReturn(new ScanResult().withItems(new HashMap<String, AttributeValue>()).withCount(0));
         sut.next();
         sut.next();
+        sut.next(); // TODO not sure why this third call is required to trigger the expected exception...
     }
 }

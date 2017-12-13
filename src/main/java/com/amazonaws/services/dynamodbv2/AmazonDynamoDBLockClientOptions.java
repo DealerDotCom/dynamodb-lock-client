@@ -17,11 +17,10 @@ package com.amazonaws.services.dynamodbv2;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Objects;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * An options class for setting up a lock client with various overrides to the defaults.
@@ -45,7 +44,7 @@ public class AmazonDynamoDBLockClientOptions {
     private final Long heartbeatPeriod;
     private final TimeUnit timeUnit;
     private final Boolean createHeartbeatBackgroundThread;
-    private final Function<String, ThreadFactory> namedThreadCreator;
+    private final NamedThreadCreator namedThreadCreator;
 
 
     /**
@@ -62,7 +61,7 @@ public class AmazonDynamoDBLockClientOptions {
         private Long heartbeatPeriod;
         private TimeUnit timeUnit;
         private Boolean createHeartbeatBackgroundThread;
-        private Function<String, ThreadFactory> namedThreadCreator;
+        private NamedThreadCreator namedThreadCreator;
 
         AmazonDynamoDBLockClientOptionsBuilder(final AmazonDynamoDB dynamoDBClient, final String tableName) {
             this(dynamoDBClient, tableName,
@@ -79,12 +78,22 @@ public class AmazonDynamoDBLockClientOptions {
             }
         }
 
-        private static Function<String, ThreadFactory> namedThreadCreator() {
-            return (String threadName) -> (Runnable runnable) -> new Thread(runnable, threadName);
+        private static NamedThreadCreator namedThreadCreator() {
+            return new NamedThreadCreator() {
+                @Override
+                public ThreadFactory createThreadWithName(final String name) {
+                    return new ThreadFactory() {
+                        @Override
+                        public Thread newThread(final Runnable runnable) {
+                            return new Thread(runnable, name);
+                        }
+                    };
+                }
+            };
         }
 
         AmazonDynamoDBLockClientOptionsBuilder(final AmazonDynamoDB dynamoDBClient, final String tableName, final String ownerName,
-            final Function<String, ThreadFactory> namedThreadCreator) {
+            final NamedThreadCreator namedThreadCreator) {
             this.dynamoDBClient = dynamoDBClient;
             this.tableName = tableName;
             this.partitionKeyName = DEFAULT_PARTITION_KEY_NAME;
@@ -92,7 +101,7 @@ public class AmazonDynamoDBLockClientOptions {
             this.heartbeatPeriod = DEFAULT_HEARTBEAT_PERIOD;
             this.timeUnit = DEFAULT_TIME_UNIT;
             this.createHeartbeatBackgroundThread = DEFAULT_CREATE_HEARTBEAT_BACKGROUND_THREAD;
-            this.sortKeyName = Optional.empty();
+            this.sortKeyName = Optional.absent();
             this.ownerName = ownerName == null ? generateOwnerNameFromLocalhost() : ownerName;
             this.namedThreadCreator = namedThreadCreator == null ? namedThreadCreator() : namedThreadCreator;
         }
@@ -212,7 +221,7 @@ public class AmazonDynamoDBLockClientOptions {
 
     private AmazonDynamoDBLockClientOptions(final AmazonDynamoDB dynamoDBClient, final String tableName, final String partitionKeyName, final Optional<String> sortKeyName,
         final String ownerName, final Long leaseDuration, final Long heartbeatPeriod, final TimeUnit timeUnit, final Boolean createHeartbeatBackgroundThread,
-        final Function<String, ThreadFactory> namedThreadCreator) {
+        final NamedThreadCreator namedThreadCreator) {
         this.dynamoDBClient = dynamoDBClient;
         this.tableName = tableName;
         this.partitionKeyName = partitionKeyName;
@@ -297,7 +306,7 @@ public class AmazonDynamoDBLockClientOptions {
     /**
      * @return A function that takes in a thread name and outputs a ThreadFactory that creates threads with the given name.
      */
-    Function<String, ThreadFactory> getNamedThreadCreator() {
+    NamedThreadCreator getNamedThreadCreator() {
         return this.namedThreadCreator;
     }
 }

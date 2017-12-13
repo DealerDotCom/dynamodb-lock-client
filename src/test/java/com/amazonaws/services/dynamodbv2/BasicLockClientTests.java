@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import com.google.common.base.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -63,7 +63,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
     @Test
     public void testAcquireBasicLock() throws LockNotGrantedException, InterruptedException {
         this.lockClient.acquireLock(AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).build());
-        assertTrue(this.lockClient.getLock("testKey1", Optional.empty()).get().getOwnerName().equals(INTEGRATION_TESTER));
+        assertTrue(this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getOwnerName().equals(INTEGRATION_TESTER));
     }
 
     /**
@@ -124,11 +124,11 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final LockItem item = lockClient2.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
         assertEquals(item.getPartitionKey(), "testKey1");
 
-        assertEquals(Optional.empty(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1));
-        assertNotEquals(Optional.empty(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
+        assertEquals(Optional.absent(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1));
+        assertNotEquals(Optional.absent(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
         Thread.sleep(5000);
-        assertEquals(Optional.empty(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1));
-        assertEquals(Optional.empty(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
+        assertEquals(Optional.absent(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1));
+        assertEquals(Optional.absent(), lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
         lockClient2.close();
     }
 
@@ -137,9 +137,9 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final LockItem item = this.lockClientWithHeartbeating.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
         assertEquals(item.getPartitionKey(), "testKey1");
 
-        assertEquals(Optional.empty(), this.lockClientWithHeartbeating.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_WITH_NO_WAIT));
+        assertEquals(Optional.absent(), this.lockClientWithHeartbeating.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_WITH_NO_WAIT));
         item.close();
-        assertNotEquals(Optional.empty(), this.lockClientWithHeartbeating.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_WITH_NO_WAIT));
+        assertNotEquals(Optional.absent(), this.lockClientWithHeartbeating.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_WITH_NO_WAIT));
     }
 
     @Test
@@ -150,7 +150,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         assertEquals(item.getPartitionKey(), "testKey1");
 
         this.lockClient.releaseLock(ReleaseLockOptions.builder(item).withDeleteLock(false).build());
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
         assertTrue(this.lockClient.getLockFromDynamoDB(new GetLockOptions.GetLockOptionsBuilder("testKey1").build()).get().isReleased());
 
         item = this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_REPLACE_DATA_FALSE);
@@ -218,7 +218,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
             AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(data.getBytes())).withDeleteLockOnRelease(true).withReplaceData(true).withSortKey(TABLE_NAME).build());
         assertEquals(data, new String(item.getData().get().array()));
 
-        assertEquals(Optional.empty(), lockClient.getLock("testKey1", Optional.of("nothing")));
+        assertEquals(Optional.absent(), lockClient.getLock("testKey1", Optional.of("nothing")));
         assertEquals(data, new String(lockClient.getLock("testKey1", Optional.of(TABLE_NAME)).get().getData().get().array()));
         lockClient.sendHeartbeat(item);
         assertEquals(data, new String(lockClient.getLock("testKey1", Optional.of(TABLE_NAME)).get().getData().get().array()));
@@ -236,9 +236,9 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
             .acquireLock(AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(data.getBytes())).withDeleteLockOnRelease(true).withReplaceData(true).build());
         assertEquals(data, new String(item.getData().get().array()));
 
-        assertEquals(data, new String(this.lockClient.getLock("testKey1", Optional.empty()).get().getData().get().array()));
+        assertEquals(data, new String(this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getData().get().array()));
         this.lockClient.sendHeartbeat(item);
-        assertEquals(data, new String(this.lockClient.getLock("testKey1", Optional.empty()).get().getData().get().array()));
+        assertEquals(data, new String(this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getData().get().array()));
 
         item.close();
     }
@@ -270,7 +270,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
 
         assertEquals(data, new String(this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DELETE_ON_RELEASE).get().getData().get().array()));
         this.lockClient.sendHeartbeat(SendHeartbeatOptions.builder(item).withDeleteData(true).build());
-        assertEquals(Optional.empty(), this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DELETE_ON_RELEASE).get().getData());
+        assertEquals(Optional.absent(), this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DELETE_ON_RELEASE).get().getData());
 
         item.close();
     }
@@ -284,7 +284,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         assertEquals(data, new String(item.getData().get().array()));
 
         item.close();
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
         assertTrue(this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DO_NOT_DELETE_ON_RELEASE).get().isReleased());
         assertEquals(data, new String(this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DO_NOT_DELETE_ON_RELEASE).get().getData().get().array()));
 
@@ -304,7 +304,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
 
         this.lockClient.releaseLock(ReleaseLockOptions.builder(item).withDeleteLock(false).withData(ByteBuffer.wrap("newData".getBytes())).build());
 
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
         assertTrue(this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DO_NOT_DELETE_ON_RELEASE).get().isReleased());
         assertEquals("newData", new String(this.lockClient.getLockFromDynamoDB(GET_LOCK_OPTIONS_DO_NOT_DELETE_ON_RELEASE).get().getData().get().array()));
 
@@ -323,7 +323,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
 
         item.close();
         item = this.lockClient.acquireLock(AcquireLockOptions.builder("testKey1").withDeleteLockOnRelease(true).withReplaceData(false).build());
-        assertEquals(Optional.empty(), item.getData());
+        assertEquals(Optional.absent(), item.getData());
 
         item.close();
     }
@@ -358,7 +358,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final LockItem item = this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
         assertEquals(item.getPartitionKey(), "testKey1");
 
-        assertNotEquals(Optional.empty(), this.lockClient.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_5_SECONDS));
+        assertNotEquals(Optional.absent(), this.lockClient.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_5_SECONDS));
     }
 
     @Test
@@ -366,8 +366,8 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final LockItem item = this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
         assertEquals(item.getPartitionKey(), "testKey1");
 
-        assertNotEquals(Optional.empty(), this.lockClient.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
-        assertNotEquals(Optional.empty(), this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_5_SECONDS));
+        assertNotEquals(Optional.absent(), this.lockClient.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_2));
+        assertNotEquals(Optional.absent(), this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_5_SECONDS));
     }
 
     @Test
@@ -375,10 +375,10 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final LockItem item = this.lockClient.acquireLock(AcquireLockOptions.builder("testKey1").build());
         assertEquals(item.getPartitionKey(), "testKey1");
 
-        assertNotEquals(Optional.empty(), this.lockClient.tryAcquireLock(AcquireLockOptions.builder("testKey2").build()));
+        assertNotEquals(Optional.absent(), this.lockClient.tryAcquireLock(AcquireLockOptions.builder("testKey2").build()));
 
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()).get().getData());
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey2", Optional.empty()).get().getData());
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getData());
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey2", Optional.fromNullable((String) null)).get().getData());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -396,7 +396,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
             new AmazonDynamoDBLockClientOptions.AmazonDynamoDBLockClientOptionsBuilder(this.dynamoDBMock, TABLE_NAME, INTEGRATION_TESTER_2).withLeaseDuration(3L).withHeartbeatPeriod(1L)
                 .withTimeUnit(TimeUnit.SECONDS).withCreateHeartbeatBackgroundThread(false).build());
         final Optional<LockItem> lockItem1 = lockClient1.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
-        assertNotEquals(Optional.empty(), lockItem1);
+        assertNotEquals(Optional.absent(), lockItem1);
 
         /* Steal lock */
         final Optional<LockItem> lockItem2 = lockClient2.tryAcquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
@@ -407,7 +407,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         assertFalse(lockClient1.releaseLock(lockItem1.get()));
 
         /* Make sure the lock is still there and owned by unitTester2 */
-        final Optional<LockItem> lockItem3 = lockClient2.getLock("testKey1", Optional.empty());
+        final Optional<LockItem> lockItem3 = lockClient2.getLock("testKey1", Optional.fromNullable((String) null));
         assertEquals(INTEGRATION_TESTER_2, lockItem3.get().getOwnerName());
         lockClient1.close();
         lockClient2.close();
@@ -420,7 +420,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
 
         Thread.sleep(4000);
         item.close();
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
     }
 
     @Test(expected = LockNotGrantedException.class)
@@ -440,7 +440,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final AmazonDynamoDBLockClient lockClient2 = new AmazonDynamoDBLockClient(
             AmazonDynamoDBLockClientOptions.builder(this.dynamoDBMock, TABLE_NAME).withOwnerName(INTEGRATION_TESTER_2).withLeaseDuration(30L).withHeartbeatPeriod(2L).withTimeUnit(TimeUnit.SECONDS)
                 .withCreateHeartbeatBackgroundThread(false).build());
-        final Optional<LockItem> item2 = lockClient2.getLock("testKey1", Optional.empty());
+        final Optional<LockItem> item2 = lockClient2.getLock("testKey1", Optional.fromNullable((String) null));
         assertFalse(lockClient2.releaseLock(item2.get()));
         lockClient2.close();
     }
@@ -453,14 +453,14 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final AmazonDynamoDBLockClient lockClient2 = new AmazonDynamoDBLockClient(
             AmazonDynamoDBLockClientOptions.builder(this.dynamoDBMock, TABLE_NAME).withOwnerName(INTEGRATION_TESTER_2).withLeaseDuration(30L).withHeartbeatPeriod(2L).withTimeUnit(TimeUnit.SECONDS)
                 .withCreateHeartbeatBackgroundThread(false).build());
-        final Optional<LockItem> item2 = lockClient2.getLock("testKey1", Optional.empty());
+        final Optional<LockItem> item2 = lockClient2.getLock("testKey1", Optional.fromNullable((String) null));
         lockClient2.sendHeartbeat(item2.get());
         lockClient2.close();
     }
 
     @Test
     public void testNullLock() {
-        assertEquals(Optional.empty(), this.lockClient.getLock("lock1", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("lock1", Optional.fromNullable((String) null)));
     }
 
     @Test
@@ -468,46 +468,46 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         this.lockClient.acquireLock(AcquireLockOptions.builder("Test 1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).build());
         this.lockClient.acquireLock(AcquireLockOptions.builder("Test 2").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).build());
         this.lockClient.acquireLock(AcquireLockOptions.builder("Test 3").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).build());
-        assertNotEquals(Optional.empty(), this.lockClient.getLock("Test 1", Optional.empty()));
-        assertNotEquals(Optional.empty(), this.lockClient.getLock("Test 2", Optional.empty()));
-        assertNotEquals(Optional.empty(), this.lockClient.getLock("Test 3", Optional.empty()));
+        assertNotEquals(Optional.absent(), this.lockClient.getLock("Test 1", Optional.fromNullable((String) null)));
+        assertNotEquals(Optional.absent(), this.lockClient.getLock("Test 2", Optional.fromNullable((String) null)));
+        assertNotEquals(Optional.absent(), this.lockClient.getLock("Test 3", Optional.fromNullable((String) null)));
         this.lockClient.close();
-        assertEquals(Optional.empty(), this.lockClient.getLock("Test 1", Optional.empty()));
-        assertEquals(Optional.empty(), this.lockClient.getLock("Test 2", Optional.empty()));
-        assertEquals(Optional.empty(), this.lockClient.getLock("Test 3", Optional.empty()));
+        assertEquals(Optional.absent(), this.lockClient.getLock("Test 1", Optional.fromNullable((String) null)));
+        assertEquals(Optional.absent(), this.lockClient.getLock("Test 2", Optional.fromNullable((String) null)));
+        assertEquals(Optional.absent(), this.lockClient.getLock("Test 3", Optional.fromNullable((String) null)));
     }
 
     @Test
     public void testEnsureLock() throws LockNotGrantedException, InterruptedException {
         final LockItem item = this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
 
-        assertEquals(3000, this.lockClient.getLock("testKey1", Optional.empty()).get().getLeaseDuration());
-        final String versionNumber = this.lockClient.getLock("testKey1", Optional.empty()).get().getRecordVersionNumber();
+        assertEquals(3000, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getLeaseDuration());
+        final String versionNumber = this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getRecordVersionNumber();
 
         /* We have the lock for 3 seconds, so this should do nothing */
         item.ensure(1, TimeUnit.SECONDS);
-        assertEquals(3000, this.lockClient.getLock("testKey1", Optional.empty()).get().getLeaseDuration());
-        assertEquals(versionNumber, this.lockClient.getLock("testKey1", Optional.empty()).get().getRecordVersionNumber());
+        assertEquals(3000, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getLeaseDuration());
+        assertEquals(versionNumber, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getRecordVersionNumber());
 
         /* Now let's extend it so we have the lock for 4 seconds */
         item.ensure(4, TimeUnit.SECONDS);
-        assertEquals(4000, this.lockClient.getLock("testKey1", Optional.empty()).get().getLeaseDuration());
-        assertNotSame(versionNumber, this.lockClient.getLock("testKey1", Optional.empty()).get().getRecordVersionNumber());
+        assertEquals(4000, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getLeaseDuration());
+        assertNotSame(versionNumber, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getRecordVersionNumber());
 
         Thread.sleep(2400);
 
         /* Now the lock is about to expire, so we can still extend it for 2 seconds */
         item.ensure(2, TimeUnit.SECONDS);
-        assertEquals(2000, this.lockClient.getLock("testKey1", Optional.empty()).get().getLeaseDuration());
-        assertNotSame(versionNumber, this.lockClient.getLock("testKey1", Optional.empty()).get().getRecordVersionNumber());
+        assertEquals(2000, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getLeaseDuration());
+        assertNotSame(versionNumber, this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().getRecordVersionNumber());
     }
 
     @Test
     public void testGetLock() throws LockNotGrantedException, InterruptedException, IOException {
         this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
-        assertNotEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
-        this.lockClient.getLock("testKey1", Optional.empty()).get().close();
-        assertEquals(Optional.empty(), this.lockClient.getLock("testKey1", Optional.empty()));
+        assertNotEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
+        this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get().close();
+        assertEquals(Optional.absent(), this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)));
     }
 
     @Test
@@ -527,9 +527,9 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         final Optional<LockItem> lock = client2.tryAcquireLock(
             AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).withReplaceData(false).withDeleteLockOnRelease(false).withRefreshPeriod(0L)
                 .withAdditionalTimeToWaitForLock(0L).withTimeUnit(TimeUnit.MILLISECONDS).withSortKey("1").build());
-        assertEquals(Optional.empty(), lock);
+        assertEquals(Optional.absent(), lock);
         item.close();
-        assertNotEquals(Optional.empty(), client2.tryAcquireLock(
+        assertNotEquals(Optional.absent(), client2.tryAcquireLock(
             AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).withReplaceData(false).withDeleteLockOnRelease(false).withRefreshPeriod(0L)
                 .withAdditionalTimeToWaitForLock(0L).withTimeUnit(TimeUnit.MILLISECONDS).withSortKey("1").build()));
         client1.close();
@@ -549,7 +549,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         assertEquals(item.getPartitionKey(), "testKey1");
 
         assertEquals(client1.getLock("testKey1", Optional.of("1")).get().getSortKey().get(), "1");
-        assertNotEquals(Optional.empty(), client2.tryAcquireLock(
+        assertNotEquals(Optional.absent(), client2.tryAcquireLock(
             AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).withReplaceData(false).withDeleteLockOnRelease(false).withRefreshPeriod(3L)
                 .withAdditionalTimeToWaitForLock(1L).withTimeUnit(TimeUnit.SECONDS).withSortKey("1").build()));
 
@@ -566,10 +566,10 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
         LockItem item = this.lockClient
             .acquireLock(AcquireLockOptions.builder("testKey1").withData(ByteBuffer.wrap(TEST_DATA.getBytes())).withAdditionalAttributes(additionalAttributes).build());
         assertTrue(item.getAdditionalAttributes().get(TABLE_NAME).getS().equals("ok"));
-        item = this.lockClient.getLock("testKey1", Optional.empty()).get();
+        item = this.lockClient.getLock("testKey1", Optional.fromNullable((String) null)).get();
         assertTrue(item.getAdditionalAttributes().get(TABLE_NAME).getS().equals("ok"));
         final AmazonDynamoDBLockClient client = new AmazonDynamoDBLockClient(this.lockClient1Options);
-        item = client.getLock("testKey1", Optional.empty()).get();
+        item = client.getLock("testKey1", Optional.fromNullable((String) null)).get();
         assertTrue(item.getAdditionalAttributes().get(TABLE_NAME).getS().equals("ok"));
         assertTrue(item.getAdditionalAttributes().equals(additionalAttributes));
         client.close();
@@ -609,7 +609,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
     @Test
     public void testLockItemToString() throws LockNotGrantedException, InterruptedException {
         final LockItem lockItem = this.lockClient.acquireLock(ACQUIRE_LOCK_OPTIONS_TEST_KEY_1);
-        final Pattern p = Pattern.compile("LockItem\\{Partition Key=testKey1, Sort Key=Optional.empty, Owner Name=" + INTEGRATION_TESTER + ", Lookup Time=\\d+, Lease Duration=3000, "
+        final Pattern p = Pattern.compile("LockItem\\{Partition Key=testKey1, Sort Key=Optional.absent, Owner Name=" + INTEGRATION_TESTER + ", Lookup Time=\\d+, Lease Duration=3000, "
             + "Record Version Number=\\w+-\\w+-\\w+-\\w+-\\w+, Delete On Close=true, Is Released=false\\}");
         assertTrue(p.matcher(lockItem.toString()).matches());
     }
@@ -642,7 +642,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
 
     @Test(expected = NullPointerException.class)
     public void testTimeUnitNotSetInAcquireLockOptionsWithSessionMonitor() throws InterruptedException, IOException {
-        final AcquireLockOptions options = AcquireLockOptions.builder("testKey1").withSessionMonitor(SHORT_LEASE_DUR / 2, Optional.empty()).build();
+        final AcquireLockOptions options = AcquireLockOptions.builder("testKey1").withSessionMonitor(SHORT_LEASE_DUR / 2, Optional.fromNullable((Runnable) null)).build();
         this.shortLeaseLockClient.acquireLock(options);
     }
 
@@ -701,7 +701,12 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
             AmazonDynamoDBLockClientOptions.builder(this.dynamoDBMock, TABLE_NAME).withOwnerName(LOCALHOST).withLeaseDuration(3 * heartbeatFreq).withHeartbeatPeriod(heartbeatFreq)
                 .withTimeUnit(TimeUnit.MILLISECONDS).withCreateHeartbeatBackgroundThread(true).build()));
         final AtomicInteger integer = new AtomicInteger(0);
-        final Runnable intSetter = () -> integer.set(1);
+        final Runnable intSetter = new Runnable() {
+            @Override
+            public void run() {
+                integer.set(1);
+            }
+        };
         final AcquireLockOptions options = stdSessionMonitorOptions(2 * heartbeatFreq, intSetter);
         final LockItem item = heartClient.acquireLock(options);
         heartClient.close();
@@ -795,7 +800,7 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
     }
 
     private static AcquireLockOptions stdSessionMonitorOptions(final long safeTimeMillis, final Runnable callback) {
-        return AcquireLockOptions.builder("testKey1").withSessionMonitor(safeTimeMillis, Optional.ofNullable(callback)).withTimeUnit(TimeUnit.MILLISECONDS).build();
+        return AcquireLockOptions.builder("testKey1").withSessionMonitor(safeTimeMillis, Optional.fromNullable(callback)).withTimeUnit(TimeUnit.MILLISECONDS).build();
     }
 
     private LockItem getShortLeaseLockWithSessionMonitor(final long safeTimeMillis, final Runnable callback) throws InterruptedException {
@@ -813,9 +818,12 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
     }
 
     private static Runnable notifyObj(final Object obj) {
-        return () -> {
-            synchronized (obj) {
-                obj.notify();
+        return new Runnable() {
+            @Override
+            public void run() {
+                synchronized (obj) {
+                    obj.notify();
+                }
             }
         };
     }
@@ -870,16 +878,19 @@ public class BasicLockClientTests extends InMemoryLockClientTester {
      * @param heartbeatFreqMillis the period of time that between heartbeats
      */
     private static void heartbeatNTimes(final LockItem item, final AtomicInteger heartbeatCount, final int nHeartbeats, final long heartbeatFreqMillis) {
-        final Thread worker = new Thread(() -> {
-            for (heartbeatCount.set(0); heartbeatCount.get() < nHeartbeats; heartbeatCount.incrementAndGet()) {
-                final long startTimeMillis = LockClientUtils.INSTANCE.millisecondTime();
-                item.sendHeartBeat();
-                final long timeSpentWorkingMillis = LockClientUtils.INSTANCE.millisecondTime() - startTimeMillis;
-                final long timeLeftToSleepMillis = Math.max(0L, heartbeatFreqMillis - timeSpentWorkingMillis);
-                try {
-                    Thread.sleep(timeLeftToSleepMillis);
-                } catch (final InterruptedException e) {
-                    throw new AssertionError("Thread interrupted", e);
+        final Thread worker = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (heartbeatCount.set(0); heartbeatCount.get() < nHeartbeats; heartbeatCount.incrementAndGet()) {
+                    final long startTimeMillis = LockClientUtils.INSTANCE.millisecondTime();
+                    item.sendHeartBeat();
+                    final long timeSpentWorkingMillis = LockClientUtils.INSTANCE.millisecondTime() - startTimeMillis;
+                    final long timeLeftToSleepMillis = Math.max(0L, heartbeatFreqMillis - timeSpentWorkingMillis);
+                    try {
+                        Thread.sleep(timeLeftToSleepMillis);
+                    } catch (final InterruptedException e) {
+                        throw new AssertionError("Thread interrupted", e);
+                    }
                 }
             }
         });
