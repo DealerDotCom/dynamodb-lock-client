@@ -88,7 +88,7 @@ final class LockItemPaginatedScanIterator implements Iterator<LockItem> {
 
         List<LockItem> temp = new ArrayList<>();
         for ( Map<String, AttributeValue> item : this.scanResult.getItems() ) {
-            if ( item != null ) {
+            if ( item != null && !item.isEmpty() ) {
                 temp.add(this.lockItemFactory.create(item));
             }
         }

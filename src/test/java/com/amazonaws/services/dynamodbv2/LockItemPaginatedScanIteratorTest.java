@@ -1,10 +1,10 @@
 package com.amazonaws.services.dynamodbv2;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +45,13 @@ public class LockItemPaginatedScanIteratorTest {
         LockItemPaginatedScanIterator sut = new LockItemPaginatedScanIterator(dynamodb, request, factory);
         List<Map<String, AttributeValue>> list1 = new ArrayList<>();
         list1.add(InternalUtils.toAttributeValues(new Item()));
+
+        assertTrue("collection has one item", list1.size() == 1);
+
         when(dynamodb.scan(any(ScanRequest.class)))
             .thenReturn(new ScanResult().withItems(list1).withCount(1).withLastEvaluatedKey(new HashMap<String, AttributeValue>()))
             .thenReturn(new ScanResult().withItems(new HashMap<String, AttributeValue>()).withCount(0));
         sut.next();
         sut.next();
-        sut.next(); // TODO not sure why this third call is required to trigger the expected exception...
     }
 }
