@@ -1,5 +1,7 @@
 # Amazon DynamoDB Lock Client
 
+Ported to support Java 7 - leverages Google Guava to preserve use of Optional.
+
 The Amazon DynamoDB Lock Client is a general purpose distributed locking library
 built for DynamoDB. The DynamoDB Lock Client supports both fine-grained and
 coarse-grained locking as the lock keys can be any arbitrary string, up to a
